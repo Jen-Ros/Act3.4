@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'lil-gui'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 
 /**
  * Base
@@ -14,13 +16,109 @@ const canvas = document.querySelector('canvas.webgl')
 // Scene
 const scene = new THREE.Scene()
 
+const gltfLoader = new GLTFLoader()
+
+
+/*gltfLoader.load(
+'/models/Duck/glTF/Duck.gltf',
+(gltf) =>{
+    console.log('success')
+    console.log(gltf)
+    },
+    (progress) =>
+
+    {
+    console.log('progress')
+    console.log(progress)
+    },
+    (error) =>
+    {
+    console.log('error')
+    console.log(error)
+    }
+)*/
+
+/*gltfLoader.load(
+'/models/Duck/glTF/Duck.gltf',
+(gltf) =>{
+    //console.log(gltf)
+    scene.add(gltf.scene.children[0])
+}
+)*/
+/*gltfLoader.load(
+'/models/Duck/glTF-Binary/Duck.glb',
+(gltf) =>{
+    //console.log(gltf)
+    scene.add(gltf.scene.children[0])
+}
+)*/
+
+/*gltfLoader.load(
+'/models/FlightHelmet/glTF/FlightHelmet.gltf',
+(gltf) =>{
+    //scene.add(gltf.scene.children[0])
+    for(const child of gltf.scene.children)
+    {
+    scene.add(child)
+    }
+
+    /*while(gltf.scene.children.length){
+
+    scene.add(gltf.scene.children[0])
+    }
+    /*const children = [...gltf.scene.children]
+    for(const child of children){
+        scene.add(child)
+    }
+    scene.add(gltf.scene)
+  }
+)*/
+
+/*const dracoLoader = new DRACOLoader()
+dracoLoader.setDecoderPath('/draco/')
+gltfLoader.setDRACOLoader(dracoLoader)
+
+gltfLoader.load(
+'/models/Duck/glTF-Draco/Duck.gltf',
+(gltf) =>{
+    scene.add(gltf.scene)
+  }
+)*/
+
+let mixer = null
+
+gltfLoader.load(
+    '/models/Fox/glTF/Fox.gltf',
+    (gltf) => {
+        console.log('Model loaded ✅', gltf);
+
+        gltf.scene.scale.set(0.1, 0.1, 0.1);
+        gltf.scene.position.set(0, 0.1, 0);
+
+        gltf.scene.traverse(child => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+
+        scene.add(gltf.scene);
+
+        mixer = new THREE.AnimationMixer(gltf.scene);
+        const action = mixer.clipAction(gltf.animations[2]);
+        action.play();
+    },
+    (progress) => console.log('Loading progress:', progress),
+    (error) => console.error('Error loading model:', error)
+);
+
 /**
  * Floor
  */
 const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(10, 10),
     new THREE.MeshStandardMaterial({
-        color: '#444444',
+        color: '#15441a',
         metalness: 0,
         roughness: 0.5
     })
@@ -28,6 +126,7 @@ const floor = new THREE.Mesh(
 floor.receiveShadow = true
 floor.rotation.x = - Math.PI * 0.5
 scene.add(floor)
+scene.background = new THREE.Color('#6db7cf');
 
 /**
  * Lights
@@ -104,6 +203,10 @@ const tick = () =>
     const elapsedTime = clock.getElapsedTime()
     const deltaTime = elapsedTime - previousTime
     previousTime = elapsedTime
+
+    if(mixer){
+    mixer.update(deltaTime)
+}
 
     // Update controls
     controls.update()
